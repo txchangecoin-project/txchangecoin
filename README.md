@@ -8,7 +8,7 @@ Portions Copyright (c) 2012-2013 The Cryptonote developers.
 ## Development resources
 
 - Web: [txchange.online](https://txchange.online)
-- Forum: [forum.txchange.online](https://forum.txchange.online)
+- Forum: [t.me/txchangecoin](https://t.me/txchangecoin)
 - Mail: [dev@txchange.online](mailto:dev@txchange.online)
 - GitHub: [https://github.com/txchangecoin-project/txchangecoin](https://github.com/txchangecoin-project/txchangecoin)
 - IRC: [#txchangecoin-dev on Freenode](https://webchat.freenode.net/?randomnick=1&channels=%23txchangecoin-dev&prompt=1&uio=d4)

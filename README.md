@@ -1,7 +1,8 @@
-# Monero
+# Txchangecoin
 
 Copyright (c) 2014-2018 The Monero Project.   
 Portions Copyright (c) 2012-2013 The Cryptonote developers.
+Copyright (c) 2019 The Txchangecoin Project.   
 
 ## Development resources
 
@@ -43,7 +44,7 @@ These builds are of the master branch, which is used for active development and 
 
 | Operating System      | Processor | Status |
 | --------------------- | -------- |--------|
-| Ubuntu 16.04          |  i686    | [![Ubuntu 16.04 i686](https://build.txchange.online/png?builder=monero-static-ubuntu-i686)](https://build.txchange.online/builders/monero-static-ubuntu-i686)
+| Ubuntu 16.04          |  i686    | [![Ubuntu 16.04 i686](https://build.getmonero.org/png?builder=monero-static-ubuntu-i686)](https://build.getmonero.org/builders/monero-static-ubuntu-i686)
 | Ubuntu 16.04          |  amd64   | [![Ubuntu 16.04 amd64](https://build.txchange.online/png?builder=monero-static-ubuntu-amd64)](https://build.txchange.online/builders/monero-static-ubuntu-amd64)
 | Ubuntu 16.04          |  armv7   | [![Ubuntu 16.04 armv7](https://build.txchange.online/png?builder=monero-static-ubuntu-arm7)](https://build.txchange.online/builders/monero-static-ubuntu-arm7)
 | Debian Stable         |  armv8   | [![Debian armv8](https://build.txchange.online/png?builder=monero-static-debian-armv8)](https://build.txchange.online/builders/monero-static-debian-armv8)

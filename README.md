@@ -11,21 +11,7 @@ Portions Copyright (c) 2012-2013 The Cryptonote developers.
 - Forum: [t.me/txchangecoin](https://t.me/txchangecoin)
 - Mail: [dev@txchange.online](mailto:dev@txchange.online)
 - GitHub: [https://github.com/txchangecoin-project/txchangecoin](https://github.com/txchangecoin-project/txchangecoin)
-- IRC: [#txchangecoin-dev on Freenode](https://webchat.freenode.net/?randomnick=1&channels=%23txchangecoin-dev&prompt=1&uio=d4)
-
-## Vulnerability response
-
-- Our [Vulnerability Response Process](https://github.com/txchangecoin-project/meta/blob/master/VULNERABILITY_RESPONSE_PROCESS.md) encourages responsible disclosure
-- We are also available via [HackerOne](https://hackerone.com/txchangecoin)
-
-## Research
-
-The [Monero Research Lab](https://src.txchange.online/resources/research-lab/) is an open forum where the community coordinates research into Monero cryptography, protocols, fungibility, analysis, and more. We welcome collaboration and contributions from outside researchers! Because not all Lab work and publications are distributed as traditional preprints or articles, they may be easy to miss if you are conducting literature reviews for your own Monero research. You are encouraged to get in touch with our researchers if you have questions, wish to collaborate, or would like guidance to help avoid unnecessarily duplicating earlier or known work.
-
-Our researchers are available on IRC in [#monero-research-lab on Freenode](https://webchat.freenode.net/?randomnick=1&channels=%23monero-research-lab&prompt=1&uio=d4) or by email:
-
-- Sarang Noether, Ph.D.: [sarang@txchange.online](mailto:sarang@txchange.online) or [sarang.noether@protonmail.com](mailto:sarang.noether@protonmail.com); [research repository](https://github.com/SarangNoether/research-lab)
-- Surae Noether (Brandon Goodell), Ph.D.: [surae@txchange.online](mailto:surae@txchange.online) or [surae.noether@protonmail.com](mailto:surae.noether@protonmail.com); [research repository](https://github.com/b-g-goodell/research-lab)
+- Discord: [#txchangecoin-dev on Discord](https://discord.gg/ugP3EZM)
 
 ## Announcements
 
@@ -164,7 +150,7 @@ invokes cmake commands as needed.
 * Change to the root of the source code directory, change to the most recent release branch, and build:
 
         cd txchangecoin
-        git checkout release-v0.14
+        git checkout master
         make
 
     *Optional*: If your machine has several cores and enough memory, enable

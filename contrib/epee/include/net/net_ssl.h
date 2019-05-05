@@ -36,6 +36,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/system/error_code.hpp>
+#define SSL_FINGERPRINT_SIZE 32
 
 namespace epee
 {

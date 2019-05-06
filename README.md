@@ -12,6 +12,12 @@ Portions Copyright (c) 2012-2013 The Cryptonote developers.
 - Mail: [dev@txchange.online](mailto:dev@txchange.online)
 - GitHub: [https://github.com/txchangecoin-project/txchangecoin](https://github.com/txchangecoin-project/txchangecoin)
 - Discord: [#txchangecoin-dev on Discord](https://discord.gg/ugP3EZM)
+- Pool: [pools.txchange.online](https://pools.txchange.online)
+- Pool Api: [api.txchange.online](https://api.txchange.online)
+- Explorer: [explorer.txchange.online](https://explorer.txchange.online)
+
+
+
 
 ## Announcements
 

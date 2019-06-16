@@ -2422,13 +2422,13 @@ bool simple_wallet::set_unit(const std::vector<std::string> &args/* = std::vecto
 
   if (unit == "txchangecoin")
     decimal_point = CRYPTONOTE_DISPLAY_DECIMAL_POINT;
-  else if (unit == "millinero")
+  else if (unit == "millitxx")
     decimal_point = CRYPTONOTE_DISPLAY_DECIMAL_POINT - 3;
-  else if (unit == "micronero")
+  else if (unit == "microtxx")
     decimal_point = CRYPTONOTE_DISPLAY_DECIMAL_POINT - 6;
-  else if (unit == "nanonero")
+  else if (unit == "nanotxx")
     decimal_point = CRYPTONOTE_DISPLAY_DECIMAL_POINT - 9;
-  else if (unit == "piconero")
+  else if (unit == "picotxx")
     decimal_point = 0;
   else
   {

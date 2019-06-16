@@ -10,7 +10,7 @@ import string
 import os
 
 USAGE = 'usage: functional_tests_rpc.py <python> <srcdir> <builddir> [<tests-to-run> | all]'
-DEFAULT_TESTS = ['daemon_info', 'blockchain', 'wallet_address', 'integrated_address', 'mining', 'transfer', 'txpool', 'multisig', 'cold_signing', 'sign_message', 'proofs']
+DEFAULT_TESTS = ['bans', 'daemon_info', 'blockchain', 'wallet_address', 'integrated_address', 'mining', 'transfer', 'txpool', 'multisig', 'cold_signing', 'sign_message', 'proofs', 'get_output_distribution']
 try:
   python = sys.argv[1]
   srcdir = sys.argv[2]
@@ -37,7 +37,7 @@ except:
 N_MONERODS = 1
 N_WALLETS = 4
 
-txchangecoind_base = [builddir + "/bin/txchangecoind", "--regtest", "--fixed-difficulty", "1", "--offline", "--no-igd", "--p2p-bind-port", "txchangecoind_p2p_port", "--rpc-bind-port", "txchangecoind_rpc_port", "--zmq-rpc-bind-port", "txchangecoind_zmq_port", "--non-interactive", "--disable-dns-checkpoints", "--check-updates", "disabled", "--rpc-ssl", "disabled", "--log-level", "1"]
+monerod_base = [builddir + "/bin/txchangecoind", "--regtest", "--fixed-difficulty", "1", "--offline", "--no-igd", "--p2p-bind-port", "txchangecoind_p2p_port", "--rpc-bind-port", "txchangecoind_rpc_port", "--zmq-rpc-bind-port", "txchangecoind_zmq_port", "--non-interactive", "--disable-dns-checkpoints", "--check-updates", "disabled", "--rpc-ssl", "disabled", "--log-level", "1"]
 wallet_base = [builddir + "/bin/txchangecoin-wallet-rpc", "--wallet-dir", builddir + "/functional-tests-directory", "--rpc-bind-port", "wallet_port", "--disable-rpc-login", "--rpc-ssl", "disabled", "--daemon-ssl", "disabled", "--daemon-port", "18180", "--log-level", "1"]
 
 command_lines = []
@@ -46,7 +46,7 @@ outputs = []
 ports = []
 
 for i in range(N_MONERODS):
-  command_lines.append([str(18180+i) if x == "txchangecoind_rpc_port" else str(18280+i) if x == "txchangecoind_p2p_port" else str(18380+i) if x == "txchangecoind_zmq_port" else x for x in txchangecoind_base])
+  command_lines.append([str(18180+i) if x == "txchangecoind_rpc_port" else str(18280+i) if x == "txchangecoind_p2p_port" else str(18380+i) if x == "txchangecoind_zmq_port" else x for x in monerod_base])
   outputs.append(open(builddir + '/tests/functional_tests/txchangecoind' + str(i) + '.log', 'a+'))
   ports.append(18180+i)
 
@@ -98,6 +98,7 @@ FAIL = []
 for test in tests:
   try:
     print('[TEST STARTED] ' + test)
+    sys.stdout.flush()
     cmd = [python, srcdir + '/' + test + ".py"]
     subprocess.check_call(cmd)
     PASS.append(test)

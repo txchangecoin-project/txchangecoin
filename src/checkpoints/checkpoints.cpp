@@ -157,8 +157,7 @@ namespace cryptonote
     return true;
   }
 
-
- bool checkpoints::init_default_checkpoints(network_type nettype)
+  bool checkpoints::init_default_checkpoints(network_type nettype)
   {
     switch (nettype) {
       case STAGENET:
@@ -170,7 +169,7 @@ namespace cryptonote
       case UNDEFINED:
         break;
       case MAINNET:
-#if !defined(LOKI_ENABLE_INTEGRATION_TEST_HOOKS)
+    #if !defined(LOKI_ENABLE_INTEGRATION_TEST_HOOKS)
         ADD_CHECKPOINT(0,  "418015bb9ae982a1975da7d79277c2705727a56894ba0fb246adaabb1f4632e3");
         ADD_CHECKPOINT(1,  "de9e2574a5b0c6b9fa07f6ab3c5ec1a567c7a61591f20a72263945317851c5b2");
         ADD_CHECKPOINT(10, "8af70eedbf36f90bb830ab7a6a52097ed70b86d8e901a2c2dd39f668407682c6");
@@ -192,12 +191,12 @@ namespace cryptonote
         ADD_CHECKPOINT(100,"7d3aa4fc4bd8dc353322531a6d3bf878995e7db2f4e0008935aad69b3ce3baaa");
         ADD_CHECKPOINT(127,"32514203b5f27f7f7aa42d7e4ad1ec57b10a6923a9df2e702e5077000d1fe786");
 
+
 #endif
         break;
     }
     return true;
   }
-
   bool checkpoints::load_checkpoints_from_json(const std::string &json_hashfile_fullpath)
   {
     boost::system::error_code errcode;
@@ -233,7 +232,6 @@ namespace cryptonote
 
     return true;
   }
-
   bool checkpoints::load_checkpoints_from_dns(network_type nettype)
   {
     return true;

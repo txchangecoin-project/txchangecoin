@@ -44,10 +44,10 @@ namespace tools
 
     MDEBUG("Checking updates for " << buildtag << " " << software);
 
-    // All four TxchangecoinPulse domains have DNSSEC on and valid
+    // All four TXXPulse domains have DNSSEC on and valid
     static const std::vector<std::string> dns_urls = {
-        "updates.txchange.online",
-        "updates.txchange.tech"
+                "updates.txchange.online",
+                "updates.txchange.tech"
     };
 
     if (!tools::dns_utils::load_txt_records_from_dns(records, dns_urls))

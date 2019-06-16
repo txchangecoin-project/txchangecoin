@@ -1,4 +1,4 @@
-# Anonymity Networks with Monero
+# Anonymity Networks with Txchangecoin
 
 Currently only Tor and I2P have been integrated into Txchangecoin. The usage of
 these networks is still considered experimental - there are a few pessimistic
@@ -55,8 +55,8 @@ proxy at IP 127.0.0.1 port 9050 with a max of 10 outgoing connections and
 9000 with the default max outgoing connections. Since there are no seed nodes
 for anonymity connections, peers must be manually specified:
 
-> `--add-exclusive-node rveahdfho7wo4b2m.onion:28083`
-> `--add-peer rveahdfho7wo4b2m.onion:28083`
+> `--add-exclusive-node rveahdfho7wo4b2m.onion:18083`
+> `--add-peer rveahdfho7wo4b2m.onion:18083`
 
 Either option can be listed multiple times, and can specify any mix of Tor,
 I2P, and IPv4 addresses. Using `--add-exclusive-node` will prevent the usage of
@@ -68,12 +68,12 @@ Receiving anonymity connections is done through the option
 `--anonymous-inbound`. This option tells `txchangecoind` the inbound address, network
 type, and max connections:
 
-> `--anonymous-inbound rveahdfho7wo4b2m.onion:28083,127.0.0.1:28083,25`
+> `--anonymous-inbound rveahdfho7wo4b2m.onion:18083,127.0.0.1:18083,25`
 > `--anonymous-inbound cmeua5767mz2q5jsaelk2rxhf67agrwuetaso5dzbenyzwlbkg2q.b32.i2p:5000,127.0.0.1:30000`
 
 which tells `txchangecoind` that a max of 25 inbound Tor connections are being
-received at address "rveahdfho7wo4b2m.onion:28083" and forwarded to `txchangecoind`
-localhost port 28083, and a default max I2P connections are being received at
+received at address "rveahdfho7wo4b2m.onion:18083" and forwarded to `txchangecoind`
+localhost port 18083, and a default max I2P connections are being received at
 address "cmeua5767mz2q5jsaelk2rxhf67agrwuetaso5dzbenyzwlbkg2q.b32.i2p:5000" and
 forwarded to `txchangecoind` localhost port 30000.
 These addresses will be shared with outgoing peers, over the same network type,
@@ -126,10 +126,10 @@ Tor must be configured for hidden services. An example configuration ("torrc")
 might look like:
 
 > HiddenServiceDir /var/lib/tor/data/txchangecoin
-> HiddenServicePort 28083 127.0.0.1:28083
+> HiddenServicePort 18083 127.0.0.1:18083
 
 This will store key information in `/var/lib/tor/data/txchangecoin` and will forward
-"Tor port" 28083 to port 28083 of ip 127.0.0.1. The file
+"Tor port" 18083 to port 18083 of ip 127.0.0.1. The file
 `/usr/lib/tor/data/txchangecoin/hostname` will contain the ".onion" address for use
 with `--anonymous-inbound`.
 
@@ -149,7 +149,7 @@ sees a transaction over Tor, it could _assume_ (possibly incorrectly) that the
 transaction originated from the peer. If both the Tor connection and an
 IPv4/IPv6 connection have timestamps that are approximately close in value they
 could be used to link the two connections. This is less likely to happen if the
-system clock is fairly accurate - many peers on the Monero network should have
+system clock is fairly accurate - many peers on the Txchangecoin network should have
 similar timestamps.
 
 #### Mitigation

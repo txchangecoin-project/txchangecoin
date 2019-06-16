@@ -30,6 +30,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "hash-ops.h"
@@ -66,7 +67,7 @@ void tree_hash(const char (*hashes)[HASH_SIZE], size_t count, char *root_hash) {
 // This bug applies to all CN altcoins.
 //
 // Mathematical bug here was first published on 14:45:34 (GMT+2) 2014-09-04 by Rafal Freeman <rfree>
-// https://github.com/rfree2monero/txchangecoin/commit/b417abfb7a297d09f1bbb6de29030f8de9952ac8
+// https://github.com/rfree2monero/bitmonero/commit/b417abfb7a297d09f1bbb6de29030f8de9952ac8
 // and soon also applied to CryptoNote (15:10 GMT+2), and BoolBerry used not fully correct work around:
 // the work around of sizeof(size_t)*8 or <<3 as used before in 2 coins and in BBL later was blocking
 // exploitation on normal platforms, how ever we strongly recommend the following fix because it removes
@@ -82,23 +83,24 @@ void tree_hash(const char (*hashes)[HASH_SIZE], size_t count, char *root_hash) {
 
     size_t cnt = tree_hash_cnt( count );
 
-    char ints[cnt][HASH_SIZE];
-    memset(ints, 0 , sizeof(ints));  // zero out as extra protection for using uninitialized mem
+    char *ints = calloc(cnt, HASH_SIZE);  // zero out as extra protection for using uninitialized mem
+    assert(ints);
 
     memcpy(ints, hashes, (2 * cnt - count) * HASH_SIZE);
 
     for (i = 2 * cnt - count, j = 2 * cnt - count; j < cnt; i += 2, ++j) {
-      cn_fast_hash(hashes[i], 64, ints[j]);
+      cn_fast_hash(hashes[i], 64, ints + j * HASH_SIZE);
     }
     assert(i == count);
 
     while (cnt > 2) {
       cnt >>= 1;
       for (i = 0, j = 0; j < cnt; i += 2, ++j) {
-        cn_fast_hash(ints[i], 64, ints[j]);
+        cn_fast_hash(ints + i * HASH_SIZE, 64, ints + j * HASH_SIZE);
       }
     }
 
-    cn_fast_hash(ints[0], 64, root_hash);
+    cn_fast_hash(ints, 64, root_hash);
+    free(ints);
   }
 }

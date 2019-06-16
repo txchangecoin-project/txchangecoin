@@ -80,7 +80,7 @@ namespace trezor {
     t_serialize(out_struct, req_param);
 
     http::fields_list additional_params;
-    additional_params.push_back(std::make_pair("Origin","https://txchangecoin.trezor.tech"));
+    additional_params.push_back(std::make_pair("Origin","https://monero.trezor.io"));
     additional_params.push_back(std::make_pair("Content-Type","application/json; charset=utf-8"));
 
     const http::http_response_info* pri = nullptr;
@@ -301,6 +301,11 @@ namespace trezor {
    * Enumerates all transports
    */
   void enumerate(t_transport_vect & res);
+
+  /**
+   * Sorts found transports by TREZOR_PATH environment variable.
+   */
+  void sort_transports_by_env(t_transport_vect & res);
 
   /**
    * Transforms path to the transport

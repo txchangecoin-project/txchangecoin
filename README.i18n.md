@@ -1,7 +1,7 @@
 Txchangecoin daemon internationalization
 ==================================
 
-The Txchangecoin command line tools can be translated in various languages. If you wish to contribute and need help/support, contact the [Txchangecoin Localization Workgroup on Taiga](https://taiga.txchange.online/project/erciccione-txchangecoin-localization/) or come chat on `#monero-translations` (Freenode/IRC, riot/matrix, MatterMost)
+The Txchangecoin command line tools can be translated in various languages. If you wish to contribute and need help/support, contact the [Txchangecoin Localization Workgroup on Taiga](https://taiga.txchange.online/project/erciccione-txchangecoin-localization/) or come chat on `#txchangecoin-translations` (Freenode/IRC, riot/matrix, MatterMost)
 
 In order to use the same translation workflow as the [Txchangecoin Core GUI](https://github.com/txchangecoin-project/txchangecoin-gui), they use Qt Linguist translation files.  However, to avoid the dependencies on Qt this normally implies, they use a custom loader to read those files at runtime.
 
@@ -15,23 +15,33 @@ You do not need anything from Qt in order to use the final translations.
 
 To update ts files after changing source code:
 
-    ./utils/translations/update-translations.sh
+```bash
+./utils/translations/update-translations.sh
+```
 
 To add a new language, eg Spanish (ISO code es):
 
-    cp translations/monero.ts translations/monero_es.ts
+```bash
+cp translations/monero.ts translations/monero_es.ts
+```
 
 To edit translations for Spanish:
 
-    linguist translations/monero_es.ts
+```bash
+linguist translations/monero_es.ts
+```
 
 To build translations after modifying them:
 
-    ./utils/translations/build-translations.sh
+```bash
+./utils/translations/build-translations.sh
+```
 
 To test a translation:
 
-    LANG=es ./build/release/bin/txchangecoin-wallet-cli
+```bash
+LANG=es ./build/release/bin/txchangecoin-wallet-cli
+```
 
 To add new translatable strings in the source code:
 
@@ -39,6 +49,8 @@ Use the `tr(string)` function if possible. If the code is in a class, and this c
 
 If you're getting messages of the form:
 
-    Class 'cryptonote::simple_wallet' lacks Q_OBJECT macro
+```
+Class 'cryptonote::simple_wallet' lacks Q_OBJECT macro
+```
 
 all is fine, we don't actually need that here.

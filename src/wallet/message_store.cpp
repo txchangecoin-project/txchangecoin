@@ -1217,7 +1217,7 @@ void message_store::send_message(const multisig_wallet_state &state, uint32_t id
     // transport address likewise derived from that token
     public_key = me.auto_config_public_key;
     dm.destination_transport_address = me.auto_config_transport_address;
-    // The destination Monero address is not yet known
+    // The destination Txchangecoin address is not yet known
     memset(&dm.destination_monero_address, 0, sizeof(cryptonote::account_public_address));
   }
   else

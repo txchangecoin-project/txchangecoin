@@ -68,7 +68,7 @@ const char * WALLET_PASS = "password";
 const char * WALLET_PASS2 = "password22";
 const char * WALLET_LANG = "English";
 
-std::string WALLETS_ROOT_DIR = "/var/monero/testnet_pvt";
+std::string WALLETS_ROOT_DIR = "/var/txchangecoin/testnet_pvt";
 std::string TESTNET_WALLET1_NAME;
 std::string TESTNET_WALLET2_NAME;
 std::string TESTNET_WALLET3_NAME;
@@ -87,8 +87,8 @@ const uint64_t AMOUNT_1XMR  =  1000000000000L;
 
 const std::string PAYMENT_ID_EMPTY = "";
 
-std::string TESTNET_DAEMON_ADDRESS = "localhost:38384";
-std::string MAINNET_DAEMON_ADDRESS = "localhost:38381";
+std::string TESTNET_DAEMON_ADDRESS = "localhost:38081";
+std::string MAINNET_DAEMON_ADDRESS = "localhost:18081";
 
 
 }

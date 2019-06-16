@@ -119,7 +119,7 @@ In order to sign gitian builds on your host machine, which has your PGP key,
 fork the gitian.sigs repository and clone it on your host machine, 
 or pass the signed assert file back to your build machine.
 
-```
+```bash
 git clone git@github.com:txchangecoin-project/gitian.sigs.git
 git remote add fluffypony git@github.com:fluffypony/gitian.sigs.git
 ```
@@ -156,9 +156,9 @@ git push --set-upstream $NAME v0.14.0
 ```
 
 ```bash
-    gpg --detach-sign ${VERSION}-linux/${SIGNER}/txchangecoin-linux-*-build.assert
-    gpg --detach-sign ${VERSION}-win-unsigned/${SIGNER}/txchangecoin-win-*-build.assert
-    gpg --detach-sign ${VERSION}-osx-unsigned/${SIGNER}/txchangecoin-osx-*-build.assert
+gpg --detach-sign ${VERSION}-linux/${SIGNER}/txchangecoin-linux-*-build.assert
+gpg --detach-sign ${VERSION}-win-unsigned/${SIGNER}/txchangecoin-win-*-build.assert
+gpg --detach-sign ${VERSION}-osx-unsigned/${SIGNER}/txchangecoin-osx-*-build.assert
 ```
 
 More Build Options
@@ -166,7 +166,7 @@ More Build Options
 
 You can choose your own remote and commit hash by running for example:
 ```bash
-./gitian-build.py --detach-sign --no-commit --url https://github.com/txchangecoinmooo-txchangecoin/bittxchangecoin -b txchangecoinmooo 1f5680c8db8f4cc7acc04a04c724b832003440fd
+./gitian-build.py --detach-sign --no-commit --url https://github.com/moneromooo-monero/bitmonero -b moneromooo 1f5680c8db8f4cc7acc04a04c724b832003440fd
 ```
 
 Note that you won't be able to build commits authored before the gitian scripts

@@ -256,9 +256,8 @@ namespace nodetool
 
   private:
     const std::vector<std::string> m_seed_nodes_list =
-    { "seeds.txchange.online"
+    {  "seeds.txchange.online"
     , "seeds.txchange.tech"
-
     };
 
     bool islimitup=false;

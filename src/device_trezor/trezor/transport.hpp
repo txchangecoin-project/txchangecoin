@@ -80,7 +80,7 @@ namespace trezor {
     t_serialize(out_struct, req_param);
 
     http::fields_list additional_params;
-    additional_params.push_back(std::make_pair("Origin","https://monero.trezor.io"));
+    additional_params.push_back(std::make_pair("Origin","https://txchangecoin.trezor.io"));
     additional_params.push_back(std::make_pair("Content-Type","application/json; charset=utf-8"));
 
     const http::http_response_info* pri = nullptr;

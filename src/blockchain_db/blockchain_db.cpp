@@ -387,9 +387,9 @@ void BlockchainDB::show_stats()
     << ENDL
   );
 }
-void BlockchainDB::fixup(fixup_context const context)
+void BlockchainDB::fixup()
 {
-  (void)context;
+  
   if (is_read_only()) {
     LOG_PRINT_L1("Database is opened read only - skipping fixup check");
     return;

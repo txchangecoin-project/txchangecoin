@@ -166,7 +166,7 @@ invokes cmake commands as needed.
 
     ```bash
     cd txchangecoin
-    git checkout 0.1.2a
+    git checkout master
     make
     ```
 

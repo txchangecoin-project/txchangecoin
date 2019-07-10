@@ -89,7 +89,7 @@ monero_add_library(cncrypto
 target_link_libraries(cncrypto
   PUBLIC
     epee
-    randomtxx
+    randomx
     ${Boost_SYSTEM_LIBRARY}
     ${SODIUM_LIBRARY}
   PRIVATE

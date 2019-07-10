@@ -12,3 +12,6 @@
 [submodule "external/unbound"]
 	path = external/unbound
 	url = https://github.com/monero-project/unbound.git
+[submodule "external/randomtxx"]
+	path = external/randomtxx
+	url = https://github.com/txchangecoin-project/RandomTXX.git

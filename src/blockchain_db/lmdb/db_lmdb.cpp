@@ -194,6 +194,8 @@ namespace
  * txpool_meta      txn hash     txn metadata
  * txpool_blob      txn hash     txn blob
  *
+ * alt_blocks       block hash   {block data, block blob}
+ *
  * Note: where the data items are of uniform size, DUPFIXED tables have
  * been used to save space. In most of these cases, a dummy "zerokval"
  * key is used when accessing the table; the Key listed above will be
@@ -220,6 +222,8 @@ const char* const LMDB_SPENT_KEYS = "spent_keys";
 
 const char* const LMDB_TXPOOL_META = "txpool_meta";
 const char* const LMDB_TXPOOL_BLOB = "txpool_blob";
+
+const char* const LMDB_ALT_BLOCKS = "alt_blocks";
 
 const char* const LMDB_HF_STARTING_HEIGHTS = "hf_starting_heights";
 const char* const LMDB_HF_VERSIONS = "hf_versions";
@@ -1077,11 +1081,11 @@ void BlockchainLMDB::add_tx_amount_output_indices(const uint64_t tx_id,
 
   int result = 0;
 
-  size_t num_outputs = amount_output_indices.size();
+  int num_outputs = amount_output_indices.size();
 
   MDB_val_set(k_tx_id, tx_id);
   MDB_val v;
-  v.mv_data = num_outputs ? (void *)amount_output_indices.data() : (void*)"";
+  v.mv_data = (void *)amount_output_indices.data();
   v.mv_size = sizeof(uint64_t) * num_outputs;
   // LOG_PRINT_L1("tx_outputs[tx_hash] size: " << v.mv_size);
 
@@ -1400,6 +1404,8 @@ void BlockchainLMDB::open(const std::string& filename, const int db_flags)
   lmdb_db_open(txn, LMDB_TXPOOL_META, MDB_CREATE, m_txpool_meta, "Failed to open db handle for m_txpool_meta");
   lmdb_db_open(txn, LMDB_TXPOOL_BLOB, MDB_CREATE, m_txpool_blob, "Failed to open db handle for m_txpool_blob");
 
+  lmdb_db_open(txn, LMDB_ALT_BLOCKS, MDB_CREATE, m_alt_blocks, "Failed to open db handle for m_alt_blocks");
+
   // this subdb is dropped on sight, so it may not be present when we open the DB.
   // Since we use MDB_CREATE, we'll get an exception if we open read-only and it does not exist.
   // So we don't open for read-only, and also not drop below. It is not used elsewhere.
@@ -1423,6 +1429,7 @@ void BlockchainLMDB::open(const std::string& filename, const int db_flags)
 
   mdb_set_compare(txn, m_txpool_meta, compare_hash32);
   mdb_set_compare(txn, m_txpool_blob, compare_hash32);
+  mdb_set_compare(txn, m_alt_blocks, compare_hash32);
   mdb_set_compare(txn, m_properties, compare_string);
 
   if (!(mdb_flags & MDB_RDONLY))
@@ -1953,7 +1960,7 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed)
 
   TIME_MEASURE_START(t);
 
-  size_t n_total_records = 0, n_prunable_records = 0, n_pruned_records = 0, commit_counter = 0;;
+  size_t n_total_records = 0, n_prunable_records = 0, n_pruned_records = 0;
   uint64_t n_bytes = 0;
 
   mdb_txn_safe txn;
@@ -2056,7 +2063,6 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed)
           {
             MDEBUG("Pruning at height " << block_height << "/" << blockchain_height);
             ++n_pruned_records;
-            ++commit_counter;
             n_bytes += k.mv_size + v.mv_size;
             result = mdb_cursor_del(c_txs_prunable, 0);
             if (result)
@@ -2066,25 +2072,6 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed)
         result = mdb_cursor_del(c_txs_prunable_tip, 0);
         if (result)
           throw0(DB_ERROR(lmdb_error("Failed to delete transaction tip data: ", result).c_str()));
-	 
-	if (mode != prune_mode_check && commit_counter >= 4096)
-        {
-          MDEBUG("Committing txn at checkpoint...");
-          txn.commit();
-          result = mdb_txn_begin(m_env, NULL, 0, txn);
-          if (result)
-            throw0(DB_ERROR(lmdb_error("Failed to create a transaction for the db: ", result).c_str()));
-          result = mdb_cursor_open(txn, m_txs_pruned, &c_txs_pruned);
-          if (result)
-            throw0(DB_ERROR(lmdb_error("Failed to open a cursor for txs_pruned: ", result).c_str()));
-          result = mdb_cursor_open(txn, m_txs_prunable, &c_txs_prunable);
-          if (result)
-            throw0(DB_ERROR(lmdb_error("Failed to open a cursor for txs_prunable: ", result).c_str()));
-          result = mdb_cursor_open(txn, m_txs_prunable_tip, &c_txs_prunable_tip);
-          if (result)
-            throw0(DB_ERROR(lmdb_error("Failed to open a cursor for txs_prunable_tip: ", result).c_str()));
-          commit_counter = 0;
-        }
       }
     }
   }
@@ -2154,7 +2141,6 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed)
             result = mdb_cursor_del(c_txs_prunable, 0);
             if (result)
               throw0(DB_ERROR(lmdb_error("Failed to delete transaction prunable data: ", result).c_str()));
-	    ++commit_counter;  
           }
         }
       }
@@ -2170,33 +2156,6 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed)
             MERROR("Prunable data not found for unpruned height " << block_height << "/" << blockchain_height <<
                 ", seed " << epee::string_tools::to_string_hex(pruning_seed));
         }
-      }
-           if (mode != prune_mode_check && commit_counter >= 4096)
-      {
-        MDEBUG("Committing txn at checkpoint...");
-        txn.commit();
-        result = mdb_txn_begin(m_env, NULL, 0, txn);
-        if (result)
-          throw0(DB_ERROR(lmdb_error("Failed to create a transaction for the db: ", result).c_str()));
-        result = mdb_cursor_open(txn, m_txs_pruned, &c_txs_pruned);
-        if (result)
-          throw0(DB_ERROR(lmdb_error("Failed to open a cursor for txs_pruned: ", result).c_str()));
-        result = mdb_cursor_open(txn, m_txs_prunable, &c_txs_prunable);
-        if (result)
-          throw0(DB_ERROR(lmdb_error("Failed to open a cursor for txs_prunable: ", result).c_str()));
-        result = mdb_cursor_open(txn, m_txs_prunable_tip, &c_txs_prunable_tip);
-        if (result)
-          throw0(DB_ERROR(lmdb_error("Failed to open a cursor for txs_prunable_tip: ", result).c_str()));
-        result = mdb_cursor_open(txn, m_tx_indices, &c_tx_indices);
-        if (result)
-          throw0(DB_ERROR(lmdb_error("Failed to open a cursor for tx_indices: ", result).c_str()));
-        MDB_val val;
-        val.mv_size = sizeof(ti);
-        val.mv_data = (void *)&ti;
-        result = mdb_cursor_get(c_tx_indices, (MDB_val*)&zerokval, &val, MDB_GET_BOTH);
-        if (result)
-          throw0(DB_ERROR(lmdb_error("Failed to restore cursor for tx_indices: ", result).c_str()));
-        commit_counter = 0;
       }
     }
     mdb_cursor_close(c_tx_indices);
@@ -2279,6 +2238,50 @@ bool BlockchainLMDB::for_all_txpool_txes(std::function<bool(const crypto::hash&,
     }
 
     if (!f(txid, meta, passed_bd)) {
+      ret = false;
+      break;
+    }
+  }
+
+  TXN_POSTFIX_RDONLY();
+
+  return ret;
+}
+
+bool BlockchainLMDB::for_all_alt_blocks(std::function<bool(const crypto::hash&, const alt_block_data_t&, const cryptonote::blobdata*)> f, bool include_blob) const
+{
+  LOG_PRINT_L3("BlockchainLMDB::" << __func__);
+  check_open();
+
+  TXN_PREFIX_RDONLY();
+  RCURSOR(alt_blocks);
+
+  MDB_val k;
+  MDB_val v;
+  bool ret = true;
+
+  MDB_cursor_op op = MDB_FIRST;
+  while (1)
+  {
+    int result = mdb_cursor_get(m_cur_alt_blocks, &k, &v, op);
+    op = MDB_NEXT;
+    if (result == MDB_NOTFOUND)
+      break;
+    if (result)
+      throw0(DB_ERROR(lmdb_error("Failed to enumerate alt blocks: ", result).c_str()));
+    const crypto::hash &blkid = *(const crypto::hash*)k.mv_data;
+    if (v.mv_size < sizeof(alt_block_data_t))
+      throw0(DB_ERROR("alt_blocks record is too small"));
+    const alt_block_data_t *data = (const alt_block_data_t*)v.mv_data;
+    const cryptonote::blobdata *passed_bd = NULL;
+    cryptonote::blobdata bd;
+    if (include_blob)
+    {
+      bd.assign(reinterpret_cast<const char*>(v.mv_data) + sizeof(alt_block_data_t), v.mv_size - sizeof(alt_block_data_t));
+      passed_bd = &bd;
+    }
+
+    if (!f(blkid, *data, passed_bd)) {
       ret = false;
       break;
     }
@@ -4108,6 +4111,110 @@ uint8_t BlockchainLMDB::get_hard_fork_version(uint64_t height) const
   uint8_t ret = *(const uint8_t*)val_ret.mv_data;
   TXN_POSTFIX_RDONLY();
   return ret;
+}
+
+void BlockchainLMDB::add_alt_block(const crypto::hash &blkid, const cryptonote::alt_block_data_t &data, const cryptonote::blobdata &blob)
+{
+  LOG_PRINT_L3("BlockchainLMDB::" << __func__);
+  check_open();
+  mdb_txn_cursors *m_cursors = &m_wcursors;
+
+  CURSOR(alt_blocks)
+
+  MDB_val k = {sizeof(blkid), (void *)&blkid};
+  const size_t val_size = sizeof(alt_block_data_t) + blob.size();
+  std::unique_ptr<char[]> val(new char[val_size]);
+  memcpy(val.get(), &data, sizeof(alt_block_data_t));
+  memcpy(val.get() + sizeof(alt_block_data_t), blob.data(), blob.size());
+  MDB_val v = {val_size, (void *)val.get()};
+  if (auto result = mdb_cursor_put(m_cur_alt_blocks, &k, &v, MDB_NODUPDATA)) {
+    if (result == MDB_KEYEXIST)
+      throw1(DB_ERROR("Attempting to add alternate block that's already in the db"));
+    else
+      throw1(DB_ERROR(lmdb_error("Error adding alternate block to db transaction: ", result).c_str()));
+  }
+}
+
+bool BlockchainLMDB::get_alt_block(const crypto::hash &blkid, alt_block_data_t *data, cryptonote::blobdata *blob)
+{
+  LOG_PRINT_L3("BlockchainLMDB:: " << __func__);
+  check_open();
+
+  TXN_PREFIX_RDONLY();
+  RCURSOR(alt_blocks);
+
+  MDB_val_set(k, blkid);
+  MDB_val v;
+  int result = mdb_cursor_get(m_cur_alt_blocks, &k, &v, MDB_SET);
+  if (result == MDB_NOTFOUND)
+    return false;
+
+  if (result)
+    throw0(DB_ERROR(lmdb_error("Error attempting to retrieve alternate block " + epee::string_tools::pod_to_hex(blkid) + " from the db: ", result).c_str()));
+  if (v.mv_size < sizeof(alt_block_data_t))
+    throw0(DB_ERROR("Record size is less than expected"));
+
+  const alt_block_data_t *ptr = (const alt_block_data_t*)v.mv_data;
+  if (data)
+    *data = *ptr;
+  if (blob)
+    blob->assign((const char*)(ptr + 1), v.mv_size - sizeof(alt_block_data_t));
+
+  TXN_POSTFIX_RDONLY();
+  return true;
+}
+
+void BlockchainLMDB::remove_alt_block(const crypto::hash &blkid)
+{
+  LOG_PRINT_L3("BlockchainLMDB::" << __func__);
+  check_open();
+  mdb_txn_cursors *m_cursors = &m_wcursors;
+
+  CURSOR(alt_blocks)
+
+  MDB_val k = {sizeof(blkid), (void *)&blkid};
+  MDB_val v;
+  int result = mdb_cursor_get(m_cur_alt_blocks, &k, &v, MDB_SET);
+  if (result)
+    throw0(DB_ERROR(lmdb_error("Error locating alternate block " + epee::string_tools::pod_to_hex(blkid) + " in the db: ", result).c_str()));
+  result = mdb_cursor_del(m_cur_alt_blocks, 0);
+  if (result)
+    throw0(DB_ERROR(lmdb_error("Error deleting alternate block " + epee::string_tools::pod_to_hex(blkid) + " from the db: ", result).c_str()));
+}
+
+uint64_t BlockchainLMDB::get_alt_block_count()
+{
+  LOG_PRINT_L3("BlockchainLMDB:: " << __func__);
+  check_open();
+
+  TXN_PREFIX_RDONLY();
+  RCURSOR(alt_blocks);
+
+  MDB_stat db_stats;
+  int result = mdb_stat(m_txn, m_alt_blocks, &db_stats);
+  uint64_t count = 0;
+  if (result != MDB_NOTFOUND)
+  {
+    if (result)
+      throw0(DB_ERROR(lmdb_error("Failed to query m_alt_blocks: ", result).c_str()));
+    count = db_stats.ms_entries;
+  }
+  TXN_POSTFIX_RDONLY();
+  return count;
+}
+
+void BlockchainLMDB::drop_alt_blocks()
+{
+  LOG_PRINT_L3("BlockchainLMDB::" << __func__);
+  check_open();
+
+  TXN_PREFIX(0);
+
+  auto result = mdb_drop(*txn_ptr, m_alt_blocks, 0);
+  if (result)
+    throw1(DB_ERROR(lmdb_error("Error dropping alternative blocks: ", result).c_str()));
+
+  TXN_POSTFIX_SUCCESS();
 }
 
 bool BlockchainLMDB::is_read_only() const

@@ -205,16 +205,15 @@ namespace cryptonote
     "blocks observed within that window, and %e by the number of blocks that was "
     "expected in that window. It is suggested that this notification is used to "
     "automatically increase the number of confirmations required before a payment "
-    , ""
-  };  "is acted upon."
+    "is acted upon."
   , ""
   };
-
   static const command_line::arg_descriptor<bool> arg_keep_alt_blocks  = {
     "keep-alt-blocks"
   , "Keep alternative blocks on restart"
   , false
   };
+
   //-----------------------------------------------------------------------------------------------
   core::core(i_cryptonote_protocol* pprotocol):
               m_mempool(m_blockchain_storage),
@@ -657,6 +656,7 @@ namespace cryptonote
     block_sync_size = command_line::get_arg(vm, arg_block_sync_size);
     if (block_sync_size > BLOCKS_SYNCHRONIZING_MAX_COUNT)
       MERROR("Error --dblock-sync-size cannot be greater than " << BLOCKS_SYNCHRONIZING_MAX_COUNT);
+
     MGINFO("Loading checkpoints");
 
     // load json & DNS checkpoints, and verify them
@@ -679,13 +679,14 @@ namespace cryptonote
 
     r = m_miner.init(vm, m_nettype);
     CHECK_AND_ASSERT_MES(r, false, "Failed to initialize miner instance");
+
     if (!keep_alt_blocks && !m_blockchain_storage.get_db().is_read_only())
       m_blockchain_storage.get_db().drop_alt_blocks();
 
     if (prune_blockchain)
     {
       // display a message if the blockchain is not pruned yet
-      if (!m_blockchain_storage.get_blockchain_pruning_seed())
+      if (m_blockchain_storage.get_current_blockchain_height() > 1 && !m_blockchain_storage.get_blockchain_pruning_seed())
       {
         MGINFO("Pruning blockchain...");
         CHECK_AND_ASSERT_MES(m_blockchain_storage.prune_blockchain(), false, "Failed to prune blockchain");

@@ -671,7 +671,9 @@ namespace cryptonote
     blobdata bd = get_block_hashing_blob(b);
     rx_alt_slowhash(main_height, seed_height, seed_hash.data, bd.data(), bd.size(), res.data);
   }
-
+  
+ bool get_block_longhash(const Blockchain *pbc, const block& b, crypto::hash& res, const uint64_t height, const int miners)
+  {
     blobdata bd = get_block_hashing_blob(b);
     const int pow_variant = b.major_version >= 7 ? b.major_version - 6 : 0;
     if (pow_variant >= 6) {

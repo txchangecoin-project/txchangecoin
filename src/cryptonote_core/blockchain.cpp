@@ -101,6 +101,8 @@ static const struct {
   { 9, 80, 0, 1555955796 },
   { 10, 90, 0, 1555957836 },
   { 11, 100, 0, 1555959636 },
+  { 12, 60000, 0, 1558044000 },
+
 };
 static const uint64_t mainnet_hard_fork_version_1_till = 9;
 
@@ -122,6 +124,8 @@ static const struct {
   { 9, 1057778, 0, 1533297600 },
   { 10, 1154318, 0, 1550153694 },
   { 11, 1155038, 0, 1550225678 },
+  { 12, 1212880, 0, 1558044000 },
+
 };
 static const uint64_t testnet_hard_fork_version_1_till = 9;
 
@@ -143,6 +147,8 @@ static const struct {
   { 9, 177176, 0, 1537821771 },
   { 10, 269000, 0, 1550153694 },
   { 11, 269720, 0, 1550225678 },
+  { 12, 1212880, 0, 1558044000 },
+
 };
 
 //------------------------------------------------------------------
@@ -156,7 +162,8 @@ Blockchain::Blockchain(tx_memory_pool& tx_pool) :
   m_difficulty_for_next_block_top_hash(crypto::null_hash),
   m_difficulty_for_next_block(1),
   m_btc_valid(false),
-  m_batch_success(true)
+  m_batch_success(true),
+  m_prepare_height(0)
 {
   LOG_PRINT_L3("Blockchain::" << __func__);
 }
@@ -704,9 +711,9 @@ bool Blockchain::reset_and_set_genesis_block(const block& b)
   LOG_PRINT_L3("Blockchain::" << __func__);
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
   m_timestamps_and_difficulties_height = 0;
-  m_alternative_chains.clear();
   invalidate_block_template_cache();
   m_db->reset();
+  m_db->drop_alt_blocks();
   m_hardfork->init();
 
   db_wtxn_guard wtxn_guard(m_db);
@@ -814,6 +821,14 @@ crypto::hash Blockchain::get_block_id_by_height(uint64_t height) const
   }
   return null_hash;
 }
+//------------------------------------------------------------------------------
+crypto::hash Blockchain::get_pending_block_id_by_height(uint64_t height) const
+{
+  if (m_prepare_height && height >= m_prepare_height && height - m_prepare_height < m_prepare_nblocks)
+    return (*m_prepare_blocks)[height - m_prepare_height].hash;
+  return get_block_id_by_height(height);
+}
+
 //------------------------------------------------------------------
 bool Blockchain::get_block_by_hash(const crypto::hash &h, block &blk, bool *orphan) const
 {
@@ -831,10 +846,15 @@ bool Blockchain::get_block_by_hash(const crypto::hash &h, block &blk, bool *orph
   // try to find block in alternative chain
   catch (const BLOCK_DNE& e)
   {
-    blocks_ext_by_hash::const_iterator it_alt = m_alternative_chains.find(h);
-    if (m_alternative_chains.end() != it_alt)
+    alt_block_data_t data;
+    cryptonote::blobdata blob;
+    if (m_db->get_alt_block(h, &data, &blob))
     {
-      blk = it_alt->second.bl;
+      if (!cryptonote::parse_and_validate_block_from_blob(blob, blk))
+      {
+        MERROR("Found block " << h << " in alt chain, but failed to parse it");
+        throw std::runtime_error("Found block in alt chain, but failed to parse it");
+      }
       if (orphan)
         *orphan = true;
       return true;
@@ -992,7 +1012,7 @@ bool Blockchain::rollback_blockchain_switching(std::list<block>& original_chain,
 //------------------------------------------------------------------
 // This function attempts to switch to an alternate chain, returning
 // boolean based on success therein.
-bool Blockchain::switch_to_alternative_blockchain(std::list<blocks_ext_by_hash::const_iterator>& alt_chain, bool discard_disconnected_chain)
+bool Blockchain::switch_to_alternative_blockchain(std::list<block_extended_info>& alt_chain, bool discard_disconnected_chain)
 {
   LOG_PRINT_L3("Blockchain::" << __func__);
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
@@ -1003,7 +1023,7 @@ bool Blockchain::switch_to_alternative_blockchain(std::list<blocks_ext_by_hash::
   CHECK_AND_ASSERT_MES(alt_chain.size(), false, "switch_to_alternative_blockchain: empty chain passed");
 
   // verify that main chain has front of alt chain's parent block
-  if (!m_db->block_exists(alt_chain.front()->second.bl.prev_id))
+  if (!m_db->block_exists(alt_chain.front().bl.prev_id))
   {
     LOG_ERROR("Attempting to move to an alternate chain, but it doesn't appear to connect to the main chain!");
     return false;
@@ -1012,7 +1032,7 @@ bool Blockchain::switch_to_alternative_blockchain(std::list<blocks_ext_by_hash::
   // pop blocks from the blockchain until the top block is the parent
   // of the front block of the alt chain.
   std::list<block> disconnected_chain;
-  while (m_db->top_block_hash() != alt_chain.front()->second.bl.prev_id)
+  while (m_db->top_block_hash() != alt_chain.front().bl.prev_id)
   {
     block b = pop_block_from_blockchain();
     disconnected_chain.push_front(b);
@@ -1023,11 +1043,11 @@ bool Blockchain::switch_to_alternative_blockchain(std::list<blocks_ext_by_hash::
   //connecting new alternative chain
   for(auto alt_ch_iter = alt_chain.begin(); alt_ch_iter != alt_chain.end(); alt_ch_iter++)
   {
-    auto ch_ent = *alt_ch_iter;
+    const auto &bei = *alt_ch_iter;
     block_verification_context bvc = boost::value_initialized<block_verification_context>();
 
     // add block to main chain
-    bool r = handle_block_to_main_chain(ch_ent->second.bl, bvc);
+    bool r = handle_block_to_main_chain(bei.bl, bvc);
 
     // if adding block to main chain failed, rollback to previous state and
     // return false
@@ -1043,14 +1063,18 @@ bool Blockchain::switch_to_alternative_blockchain(std::list<blocks_ext_by_hash::
       // FIXME: Why do we keep invalid blocks around?  Possibly in case we hear
       // about them again so we can immediately dismiss them, but needs some
       // looking into.
-      add_block_as_invalid(ch_ent->second, get_block_hash(ch_ent->second.bl));
-      MERROR("The block was inserted as invalid while connecting new alternative chain, block_id: " << get_block_hash(ch_ent->second.bl));
-      m_alternative_chains.erase(*alt_ch_iter++);
+      const crypto::hash blkid = cryptonote::get_block_hash(bei.bl);
+      add_block_as_invalid(bei, blkid);
+      MERROR("The block was inserted as invalid while connecting new alternative chain, block_id: " << blkid);
+      m_db->remove_alt_block(blkid);
+      alt_ch_iter++;
 
       for(auto alt_ch_to_orph_iter = alt_ch_iter; alt_ch_to_orph_iter != alt_chain.end(); )
       {
-        add_block_as_invalid((*alt_ch_to_orph_iter)->second, (*alt_ch_to_orph_iter)->first);
-        m_alternative_chains.erase(*alt_ch_to_orph_iter++);
+        const auto &bei = *alt_ch_to_orph_iter++;
+        const crypto::hash blkid = cryptonote::get_block_hash(bei.bl);
+        add_block_as_invalid(bei, blkid);
+        m_db->remove_alt_block(blkid);
       }
       return false;
     }
@@ -1075,12 +1099,13 @@ bool Blockchain::switch_to_alternative_blockchain(std::list<blocks_ext_by_hash::
   }
 
   //removing alt_chain entries from alternative chains container
-  for (auto ch_ent: alt_chain)
+  for (const auto &bei: alt_chain)
   {
-    m_alternative_chains.erase(ch_ent);
+    m_db->remove_alt_block(cryptonote::get_block_hash(bei.bl));
   }
 
   m_hardfork->reorganize_from_chain_height(split_height);
+  get_block_longhash_reorg(split_height);
 
   std::shared_ptr<tools::Notify> reorg_notify = m_reorg_notify;
   if (reorg_notify)
@@ -1093,7 +1118,7 @@ bool Blockchain::switch_to_alternative_blockchain(std::list<blocks_ext_by_hash::
 //------------------------------------------------------------------
 // This function calculates the difficulty target for the block being added to
 // an alternate chain.
-difficulty_type Blockchain::get_next_difficulty_for_alternative_chain(const std::list<blocks_ext_by_hash::const_iterator>& alt_chain, block_extended_info& bei) const
+difficulty_type Blockchain::get_next_difficulty_for_alternative_chain(const std::list<block_extended_info>& alt_chain, block_extended_info& bei) const
 {
   if (m_fixed_difficulty)
   {
@@ -1111,7 +1136,7 @@ difficulty_type Blockchain::get_next_difficulty_for_alternative_chain(const std:
     CRITICAL_REGION_LOCAL(m_blockchain_lock);
 
     // Figure out start and stop offsets for main chain blocks
-    size_t main_chain_stop_offset = alt_chain.size() ? alt_chain.front()->second.height : bei.height;
+    size_t main_chain_stop_offset = alt_chain.size() ? alt_chain.front().height : bei.height;
     size_t main_chain_count = DIFFICULTY_BLOCKS_COUNT - std::min(static_cast<size_t>(DIFFICULTY_BLOCKS_COUNT), alt_chain.size());
     main_chain_count = std::min(main_chain_count, main_chain_stop_offset);
     size_t main_chain_start_offset = main_chain_stop_offset - main_chain_count;
@@ -1129,10 +1154,10 @@ difficulty_type Blockchain::get_next_difficulty_for_alternative_chain(const std:
     // make sure we haven't accidentally grabbed too many blocks...maybe don't need this check?
     CHECK_AND_ASSERT_MES((alt_chain.size() + timestamps.size()) <= DIFFICULTY_BLOCKS_COUNT, false, "Internal error, alt_chain.size()[" << alt_chain.size() << "] + vtimestampsec.size()[" << timestamps.size() << "] NOT <= DIFFICULTY_WINDOW[]" << DIFFICULTY_BLOCKS_COUNT);
 
-    for (auto it : alt_chain)
+    for (const auto &bei : alt_chain)
     {
-      timestamps.push_back(it->second.bl.timestamp);
-      cumulative_difficulties.push_back(it->second.cumulative_difficulty);
+      timestamps.push_back(bei.bl.timestamp);
+      cumulative_difficulties.push_back(bei.cumulative_difficulty);
     }
   }
   // if the alt chain is long enough for the difficulty calc, grab difficulties

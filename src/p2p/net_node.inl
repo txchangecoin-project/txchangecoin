@@ -460,8 +460,12 @@ namespace nodetool
     else
     {
       full_addrs.insert("192.168.43.182:38380");
-      //full_addrs.insert("80.211.14.44:38380");
-      //full_addrs.insert("80.211.167.81:38380");
+      full_addrs.insert("80.211.167.81:38380");
+      full_addrs.insert("178.128.122.193:38380");
+      full_addrs.insert("134.209.157.138:38380");
+      full_addrs.insert("206.189.34.54:38380");
+      full_addrs.insert("209.97.168.80:38380");
+
     }
     return full_addrs;
   }

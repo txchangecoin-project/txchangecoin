@@ -676,7 +676,7 @@ namespace cryptonote
   {
     blobdata bd = get_block_hashing_blob(b);
     const int pow_variant = b.major_version >= 7 ? b.major_version - 6 : 0;
-    if (pow_variant >= 6) {
+    if (b.major_version >= RX_BLOCK_VERSION) {
       uint64_t seed_height;
       if (rx_needhash(height, &seed_height)) {
         crypto::hash hash;
